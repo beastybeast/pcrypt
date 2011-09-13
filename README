@@ -1,1 +1,47 @@
-No content
+PCRYPT - Javascript encryption for privacy and security in cloud computing
+
+OVERVIEW
+The PCRYPT library create a framework for secure and private cloud computing. 
+It is implemented with javascript, PHP and MySQL as the data store.
+The background is to handle as much processing in the browser with 
+javascript and only use PHP and MySQL as a thin layer to store data.
+All data is encrypted with AES before it is sent over the internet. It
+is very flexible to use the library for any purpose as long as you implement
+most of the features in javascript and need to store some data on the server.
+I created this for the same reason that so many other systems have been made.
+I was not satisfied with what was there in the first place. I created this 
+system as a hobby project to get a secure and private library.
+I have created an online password crypt system to demonstrate use of the 
+library. You can find it here: http://passwordcrypt.org
+
+IMPLEMENTATION
+Data you enter is encrypted and decrypted via Javascript in your browser! 
+This means that only encrypted data is sent over the internet to and from the 
+server. Encryption and decryption is done with 256 bit standard AES inside 
+your browser on your own PC. The master password you enter is never 
+transmitted over the internet. The master password is only stored in 
+your browser as long as the browser window is open and you are logged in. 
+
+FEATURES
+AES 256 encryption of data
+Do not rely on cookies
+Compression of data with LZ77
+JSON strings used to store any data
+Work with most browsers
+
+SECURITY
+Nobody knows for sure how secure this library is! If somebody finds a way to 
+break AES encryption or an implementation error is made - security may be 
+compromised. 
+
+LICENSE
+The core pcrypt code/library is released as Open Source (GNU General Public 
+License - GPL) and also in a commercial version. The dual license model is 
+designed to meet the development and distribution needs of both commercial 
+distributors (such as OEMs, ISVs and VARs) and also open source projects. 
+If you want to use the pcrypt system in a commercial project (not open source) 
+please contact me. Standard tools as Javascript, PHP and MySQL have been used 
+to create the complete system. The Password crypt site is not open source but 
+please feel free to browse the source and use it as inspiration for your own 
+project (as a demonstration of pcrypt use). The source code for pcrypt is 
+available on Github.
