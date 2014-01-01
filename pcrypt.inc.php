@@ -73,18 +73,10 @@ function brute_force_delay($db, $crypt)
 
 		$count = $result->fields['count'] + 1;
 		$updated = $result->fields['updated_unix'];
-
-		if($count > 1)
-		{
-			$query = "UPDATE `bruteforce` SET count=".$count.", usercrypt=".$db->Qmagic($crypt)." WHERE `ip`='".$ip."'";
-			$resultnew = $db->Execute($query) or trigger_error("Error in database SQL: ".$query." => ".$db->ErrorMsg(), E_USER_ERROR);
-		}
-		else
-		{    
-			$query = "INSERT INTO `bruteforce` (`ip`, `count`, `usercrypt`) VALUES ('".$ip."', 1, ".$db->Qmagic($crypt).")";
-			$resultnew = $db->Execute($query) or trigger_error("Error in database SQL: ".$query." => ".$db->ErrorMsg(), E_USER_ERROR);
-		}
-    
+		
+		$query = "INSERT INTO `bruteforce` (`ip`, `count`, `usercrypt`) VALUES ('".$ip."', 1, ".$db->Qmagic($crypt).") ON DUPLICATE KEY UPDATE count=".$count.", usercrypt=".$db->Qmagic($crypt);
+		$resultnew = $db->Execute($query) or trigger_error("Error in database SQL: ".$query." => ".$db->ErrorMsg(), E_USER_ERROR);
+		
 		$timediff = time() - $updated;
 
 		if($timediff < 1)
@@ -95,8 +87,10 @@ function brute_force_delay($db, $crypt)
 		if($max < 1000000)
 		  $max = 1000000;
 		  
-		if($max > 20000000)
-		  $max = 20000000; 
+		if($max > 5000000)
+		  $max = 5000000; 
+		  
+		trigger_error("PCrypt Brute force: IP=".$ip.", Count=".$count.", timediff=".$timediff, E_USER_WARNING);
 
 		// use some time (prevent brute force attack)
 		usleep(mt_rand(500000, $max));
@@ -132,7 +126,7 @@ function getusercrypt($db, $session)
 	// get loginsession
 	$query = "SELECT id FROM `sessions` WHERE `value` = ".$db->Qmagic($session)." AND `key` = 'session' LIMIT 1";
 	if(false == ($result = $db->Execute($query)))
-		return "SQLERROR";
+		return false;
 
 	if($result->RecordCount() == 1)
 	{
@@ -141,18 +135,12 @@ function getusercrypt($db, $session)
 	else
 	{
 		brute_force_delay($db, "getusercrypt"); // delay somebody that try to steal the session (no use - but anyway)
-		return "NOSESSIONFOUND";
+		return false;
 	}
 }
 
 function makereply($json, $id, $result, $error)
-{
-	if($error == 4) // do not reveal database errors (info about the system)
-	{
-		trigger_error($result, E_USER_WARNING);
-		$result = "Error in database SQL - please contact administrator!";
-	}
-	
+{	
 	$replyjson = array();
 
 	$replyjson['result'] = $result;
@@ -160,6 +148,19 @@ function makereply($json, $id, $result, $error)
 	$replyjson['id'] = $id;
 
 	return $json->encode($replyjson);
+}
+
+function isCli() 
+{ 
+     $sapiname = php_sapi_name();
+     
+     if((substr($sapiname , 0, 3) == 'cgi') || (substr($sapiname , 0, 3) == 'cli')) // PHP 4 and 5 version    
+     if(empty($_SERVER['REMOTE_ADDR'])) 
+     {
+          return true;
+     } 
+     
+     return false;
 }
 
 ?>

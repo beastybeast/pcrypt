@@ -50,8 +50,8 @@
 
 $db_system = "mysql"; // see above
 $db_server = "localhost"; // IP adr. of where database is located
-$db_user = "passwords"; // database user name. 
-$db_password = "641677216150a2f1"; // database password
-$db_database = "passwordcrypt"; // name of database
+$db_user = "XX"; // database user name. 
+$db_password = "XX"; // database password
+$db_database = "XX"; // name of database
 
 ?>

@@ -1,6 +1,6 @@
 /*
 
-    PasswordCrypt - online password store
+    pcrypt - Javascript encryption for privacy and security in cloud computing
     Copyright (C) 2010 Benny Nissen.
 
     This program is free software: you can redistribute it and/or modify
@@ -18,159 +18,15 @@
 
 */
 
-function validatepassobject(passobj)
-{
-	//passobj.id = findnextid(passArr); ??
-	
-	if(typeof(passobj.cre) != 'number')
-		passobj.cre = (new Date()).getTime();
-	if(typeof(passobj.upd) != 'number')
-		passobj.upd = (new Date()).getTime();
-
-	if(typeof(passobj.gid) != 'number')
-		if(passobj.gid) passobj.gid = Number(passobj.gid);
-		else passobj.gid = 0;
-
-	if(typeof(passobj.name) != 'string')
-		if(passobj.name) passobj.name = passobj.name.toString();
-		else passobj.name = '';
-
-	if(typeof(passobj.user) != 'string')
-		if(passobj.user) passobj.user = passobj.user.toString();
-		else passobj.user = '';
-
-	if(typeof(passobj.pass) != 'string')
-		if(passobj.pass) passobj.pass = passobj.pass.toString();
-		else passobj.pass = '';
-
-	if(typeof(passobj.url) != 'string')
-		if(passobj.url) passobj.url = passobj.url.toString();
-		else passobj.url = '';
-
-	if(typeof(passobj.note) != 'string')
-		if(passobj.note) passobj.note = passobj.note.toString();
-		else passobj.note = '';
-
-	if(passobj.name.length > 63)
-		passobj.name = passobj.name.substring(0, 63);
-	if(passobj.user.length > 63)
-		passobj.user = passobj.user.substring(0, 63);
-	if(passobj.pass.length > 63)
-		passobj.pass = passobj.pass.substring(0, 63);
-	if(passobj.url.length > 255)
-		passobj.url = passobj.url.substring(0, 63);
-	if(passobj.note.length > 255)
-		passobj.note = passobj.note.substring(0, 63);
-
-	return passobj;
-}
-
-function validategroupobject(groupobj)
-{
-	//groupobj.id = findnextid(passArr); ??
-	
-	if(typeof(groupobj.cre) != 'number')
-		groupobj.cre = (new Date()).getTime();
-	if(typeof(groupobj.upd) != 'number')
-		groupobj.upd = (new Date()).getTime();
-
-	if(typeof(groupobj.name) != 'string')
-		if(passobj.name) passobj.name = passobj.name.toString();
-		else passobj.name = '';
-
-	if(groupobj.name.length > 63)
-		passobj.name = passobj.name.substring(0, 63);
-
-	return groupobj;
-}
-
-function convertobjtoarray(obj)
-{
-	// return Array.prototype.slice.call(obj, 0); // does not work
-
-	var array = [];
-
-	for (var key in obj)
-	if(obj.hasOwnProperty(key))
-		array.push(obj[key]);  
-   
-	return array; 
-} 
-
-function exportarraycsv(array, items)
-{
-	var exportArr = [];
-
-	// get object item names from first array item
-	exportArr[0] = [];
-	for (var name in array[0])
-	{
-		exportArr[0].push(name);
-	}
-
-	for (var i = 0; i < array.length; i++)
-	for (var j = 0; j < items.length; j++)
-	if(items[j] == array[i].id)
-	{
-		exportArr.push(convertobjtoarray(array[i]));
-	}
-
-	return CSV.arrayToCsv(exportArr);
-
-	//csvstring = csvstring.replace(/\n/g, '<br>');
-} 
-
-function validemail(email) 
-{
-	var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;  
-	
-	return emailPattern.test(email); 
-}
-
-function testvalidlogin() // user may have opened a new tab (not legal as it erases sessionStorage for the new tab)
-{
-	if(!definedcryptkey()) 
-	{	
-		top.location.replace(window.location.protocol + '//' + window.location.host + '/login.php'); 
-	}
-}
-
-// Array Remove - By John Resig (MIT Licensed)
-Array.prototype.remove = function(from, to) 
-{
-	var rest = this.slice((to || from) + 1 || this.length);
-	this.length = from < 0 ? this.length + from : from;
-	return this.push.apply(this, rest);
-};
-
-function findid(array, id)
-{
-	for (var i = 0; i < array.length; i++)
-	if(array[i].id == id)
-		return i;
-}
-
-function findnextid(array)
-{
-	var nextid = 0;
-
-	for (var i = 0; i < array.length; i++)
-	if(array[i].id > nextid)
-		nextid = array[i].id;
-
-	return nextid + 1;
-}
-
-function jsonrpc(method, usercrypt, dataname, data, id, callback)
+function jsonrpc(method, session, dataname, data, id, callback)
 {
 	var tmpObj = {};
 	var tmpArr = [];
 
 	tmpObj.method = method;
-	tmpArr[0] = usercrypt;
+	tmpArr[0] = session;
 	tmpArr[1] = dataname;
 	tmpArr[2] = data;
-	//tmpArr[3] = Sha256.hash(tmpArr[1]);
 	tmpObj.params = tmpArr;
 	tmpObj.id = id;
 
@@ -180,73 +36,116 @@ function jsonrpc(method, usercrypt, dataname, data, id, callback)
 		{
 			try 
 			{
-				var tmpObjreply = JSON.parse(http.responseText);
-				//var finalresult = JSON.parse(tmpObjreply.result[0]);
-
-				if(1)//if(tmpObjreply.result[1] == Sha256.hash(tmpObjreply.result[0]))
-				{
-					if(callback)
-				      		callback(tmpObjreply.result[0], tmpObjreply.error, tmpObjreply.id);
-				}
-				else
-				{
-					if(callback)
-				      		callback('Server checksum is not correct', 'crc', null);
-				}
+				 var tmpObjreply = JSON.parse(http.responseText);
+				 
+				 if(callback)
+            callback(tmpObjreply.result, tmpObjreply.error, tmpObjreply.id);
 			}
 			catch(e)
 			{
 				if(callback)
-					callback('Exception in parsing', 'json', null);
+					callback('Exception in parsing or callback function error', 'jsonrpc', null);
 			}
 		}
 		else
 		{
 			if(callback)
-				callback('HTTP returned status: ' + http.status, 'http', tmpObjreply.id);
+			{
+        if(typeof(http) == 'object')
+          callback('HTTP returned status: ' + http.status, 'http', null);
+        else if(typeof(http) == 'string')
+          callback('HTTP returned string status: ' + http, 'http', null);
+        else
+          callback('HTTP returned unknown error,', 'http', null);
+      }
 		}
 	}
 
-	jsoncom('jsoncom.php', JSON.stringify(tmpObj), jsonrpcreply);
+	jsoncom('POST', 'https://pcrypt.org/dev/pcrypt.php', JSON.stringify(tmpObj), jsonrpcreply); // POST mean almost unlimited data size
 }
 
-function jsoncom(url, data, dofunc)
+function jsoncom(method, url, data, dofunc)
 {
-	var http = new XMLHttpRequest();
-
-	http.open("POST", url, true); // POST mean almost unlimited data size
-
-	//Send the proper header information along with the request
-	http.setRequestHeader("Content-type", "application/json");	
-	http.setRequestHeader("Content-length", data.length);
-	http.setRequestHeader("Connection", "close");
-
-	http.onreadystatechange = function() // Call a function when the state changes.
+  try 
 	{
-		if(dofunc) 
-		if(http.readyState == 4)
-		{			
-			dofunc(http);
-		}
-	}
-	http.send(data);
+    var http = new XMLHttpRequest(); 
+
+    http.open(method, url, true); 
+
+    //Send the proper header information along with the request
+    http.setRequestHeader("Content-type", "application/json");	
+    http.setRequestHeader("Content-length", data.length);
+    http.setRequestHeader("Connection", "close");
+
+    http.onreadystatechange = function() // Call a function when the state changes.
+    {
+      if(dofunc) 
+      if(http.readyState == 4)
+      {			
+        dofunc(http);
+      }
+    }
+    http.send(data);
+  }
+  catch(e)
+  {
+    dofunc(e.message);
+  }
 }
 
-function getarray(sessioncrypt, saltcrypt, arrayname)
+function getdata(session, cryptkey, saltcrypt, dataname, id, callback)
 {
+	function getdatafunc(data, error, id)
+	{
+		if(error)
+		{
+			callback(data, error, id);
+			return;
+		}
+		try
+		{
+			// test crc
+			if(crc32(data[0]) != data[1])
+			{
+				callback('Server checksum is not validated', 'crc', null);
+				return;	
+			}
+
+			var datastring = decryptstring(cryptkey, saltcrypt, data[0]);
+			var lz = new LZ77();
+			datastring = lz.decompress(datastring);
+
+			setvalue(dataname, datastring);
+
+			if(datastring.length)
+				callback(JSON.parse(datastring), error, id);
+			else
+				callback(null, error, id); // for some reason JSON.parse fail with empty string	
+		}
+		catch(e)
+		{
+			callback('Exception in parsing or decryption', 'data', id);
+		}
+	}
+
 	try
 	{
-		var data = getvalue(arrayname);
+		if(existvalue(dataname))
+		{
+			var datastring = getvalue(dataname);
 
-		if(!data || !data.length)
-			return []; // empty array
+			if(datastring.length)
+				callback(JSON.parse(datastring), null, id);
+			else
+				callback(null, null, id); // for some reason JSON.parse fail with empty string	
 
-		var array = JSON.parse(decryptstring(sessioncrypt, saltcrypt, data));
-
-		if(!array || !array.length)
-			return []; // empty array
-
-		return array;
+			return true;
+		}
+		else
+		{
+			jsonrpc('getdata', session, dataname, null, id, getdatafunc);
+			return true;
+		}
 	}
 	catch(e)
 	{
@@ -254,15 +153,16 @@ function getarray(sessioncrypt, saltcrypt, arrayname)
 	}	
 }
 
-function setarray(usercrypt, sessioncrypt, saltcrypt, arrayname, array, id, callback)
+function setdata(session, cryptkey, saltcrypt, dataname, data, id, callback)
 {
 	try
 	{
-		var data = encryptstring(sessioncrypt, saltcrypt, JSON.stringify(array));
-
-		setvalue(arrayname, data);
-		jsonrpc('setdata', usercrypt, arrayname, data, id, callback);
-
+		var datastring = JSON.stringify(data);
+		var lz = new LZ77();
+		setvalue(dataname, datastring);
+		datastring = lz.compress(datastring);
+		datastring = encryptstring(cryptkey, saltcrypt, datastring);
+		jsonrpc('setdata', session, dataname, [datastring, crc32(datastring)], id, callback);
 		return true;
 	}
 	catch(e)
@@ -279,77 +179,183 @@ function sessionstorageexist()
 			return false;
 	
 		return 'sessionStorage' in window && window['sessionStorage'] !== null;
-  	} 
+  } 
 	catch(e)
 	{
 		return false;
 	}
 }
 
-function setvalue(key, value)
+function setlocalencryption(key, salt)
 {
-	if(sessionstorageexist())
+  if(!sessionstorageexist())
+    return false;
+    
+  try
+  {
+    if(settopname('encryptkey', key))
+      return settopname('encryptsalt', salt);
+      
+    return false; 
+  } 
+	catch(e)
 	{
-		sessionStorage[key] = JSON.stringify(value);
-		return;
+		return false;
 	}
-
-	if(top.name.length)
-		var tmpObj = JSON.parse(top.name);
-	else
-		var tmpObj = {};
-	
-	tmpObj[key] = value;
-	
-	top.name = JSON.stringify(tmpObj);
 }
 
-function getvalue(key)
+function settopname(key, value)
 {
-	if(sessionstorageexist())
+  try
+  {
+    if(top.name.length)
+      var tmpObj = JSON.parse(top.name);
+    else
+      var tmpObj = {};
+    
+    tmpObj[key] = value;
+    
+    top.name = JSON.stringify(tmpObj);
+    
+    return true;
+  } 
+	catch(e)
 	{
-		return JSON.parse(sessionStorage[key]);
+		return false;
 	}
 
-	if(!top.name.length)
-		return false;
-
-	var tmpObj = JSON.parse(top.name);
-
-	return tmpObj[key];
 }
 
-function definedvalue(key)
+function gettopname(key)
 {
-	if(sessionstorageexist())
+  try
+  {
+    if(!top.name.length)
+      return false;
+
+    var tmpObj = JSON.parse(top.name);
+
+    return tmpObj[key];
+  } 
+	catch(e)
 	{
-		return (typeof(sessionStorage[key]) == "string") ?  true : false;			
-	}
-	
-	if(!top.name.length)
 		return false;
+	}
+}
 
-	var tmpObj = JSON.parse(top.name);
+function setvalue(key, value, encryption)
+{
+  try
+  {
+    if(typeof encryption == 'undefined')
+      encryption = true;
+    
+    if(sessionstorageexist())
+    {
+      var encryptkey = gettopname('encryptkey');
+      var encryptsalt = gettopname('encryptsalt');
+    
+      if(encryptkey && encryptsalt && encryption)
+      {      
+        sessionStorage[key] = encryptstring(encryptkey, encryptsalt, JSON.stringify(value));
+      }
+      else
+      {
+        sessionStorage[key] = JSON.stringify(value);
+      }
+        
+      return true;
+    }
 
-	return (typeof(tmpObj[key]) == "string") ?  true : false;	
+    return settopname(key, value);
+
+  } 
+	catch(e)
+	{
+    //alert('debug set false: ' + key);
+		return false;
+	}
+}
+
+function getvalue(key, encryption)
+{
+  try
+  {
+    if(typeof encryption == 'undefined')
+      encryption = true;
+    
+    if(sessionstorageexist())
+    {
+      var encryptkey = gettopname('encryptkey');
+      var encryptsalt = gettopname('encryptsalt');
+      
+      if(encryptkey && encryptsalt && encryption)
+      {
+        return JSON.parse(decryptstring(encryptkey, encryptsalt, sessionStorage[key]));
+      }
+      else
+      {
+        return JSON.parse(sessionStorage[key]);
+      }
+    }
+
+    return gettopname(key);
+    
+  } 
+	catch(e)
+	{
+    //alert('debug get false (' + key + '): ' + e.message + ' - ' + sessionStorage[key]);
+    return false;
+	}
+}
+
+function existvalue(key)
+{
+  try
+  {    
+    if(sessionstorageexist())
+    {		
+      return (sessionStorage[key] != undefined);
+    }
+    
+    if(!top.name.length)
+      return false;
+
+    var tmpObj = JSON.parse(top.name);
+
+    return (tmpObj[key] == undefined) ?  false : true;
+  } 
+	catch(e)
+	{
+		return false;
+	}
 }
 
 function deletevalue(key)
 {
-	if(sessionstorageexist())
+  try
+  {
+    if(sessionstorageexist())
+    {
+      delete sessionStorage[key];
+      return true;
+    }
+
+    if(!top.name.length)
+      return false;
+
+    var tmpObj = JSON.parse(top.name);
+
+    delete tmpObj[key];
+
+    top.name = JSON.stringify(tmpObj);
+    
+    return true;
+  } 
+	catch(e)
 	{
-		delete sessionStorage[key];
-		return;
-	}
-
-	if(!top.name.length)
 		return false;
-
-	var tmpObj = JSON.parse(top.name);
-
-	delete tmpObj[key];
-
-	top.name = JSON.stringify(tmpObj);
+	}
 }
 
 function flushvalues()
@@ -362,27 +368,7 @@ function flushvalues()
 	top.name = "";
 }
 
-function deletecryptkey()
-{
-	flushvalues(); // just delete it all
-}
-
-function definedcryptkey()
-{
-	return definedvalue('cryptkey');
-}
-
-function setcryptkey(sessioncrypt, cryptkey)
-{
-	setvalue('cryptkey', Aes.Ctr.encrypt(Sha256.hash(cryptkey), sessioncrypt, 256)); // SHA256 hide length of key
-}
-
-function getcryptkey(sessioncrypt)
-{
-	return Aes.Ctr.decrypt(getvalue('cryptkey'), sessioncrypt, 256);
-}
-
-function aesusercipher(usertext, password) 
+function aesusercipher(usertext, password)
 {
 	if(!usertext.length || !password.length)
 		return false;
@@ -422,309 +408,13 @@ function aesusercipher(usertext, password)
 	return ciphertxtarray.join('');
 }
 
-function buildtable(tablestyle, tablearrayheader, htmlarray) 
-{
-	//http://www.oreillynet.com/pub/a/javascript/2003/05/06/dannygoodman.html?page=2
-	//http://www.oreillynet.com/javascript/2003/05/06/examples/dyn_table_benchmarker_ora.html
-	
-	var tablestring;
-	var bgcolor;
-
-	tablestring = "<table " + tablestyle + ">";
-
-	tablestring += "<tr>";
-	for (var i = 0, len_i = tablearrayheader.length; i < len_i; ++i) 
-		tablestring += "<th " + tablearrayheader[i][1] + ">" + tablearrayheader[i][0];
-
-	for (var i = 0, len_i = htmlarray.length; i < len_i; ++i)
-	{
-		tablestring += "<tr>";
-		
-		if(i%2)		
-			bgcolor = "";
-		else
-			bgcolor = " style='background-color: #d8d8d8;'"; // e6e6e6 or d8d8d8
-	
-		for (var j = 0, len_j = htmlarray[i].length; j < len_j; ++j) 
-			tablestring += "<td" + bgcolor + ">" + htmlarray[i][j];
-	}
-
-	tablestring += "</table>";
-
-	return tablestring;
-}
-
-function encryptstring(sessioncrypt, saltcrypt, text)
+function encryptstring(keycrypt, saltcrypt, text)
 {	
-	var cryptkey = getcryptkey(sessioncrypt);
-
-	if(cryptkey === false)
-		return false;
-
-	cryptkey = Sha256.hash(cryptkey + saltcrypt);
-
-	return Aes.Ctr.encrypt(text, cryptkey, 256);
+	return Aes.Ctr.encrypt(text, Sha256.hash(keycrypt + saltcrypt), 256);
 }
 
-function decryptstring(sessioncrypt, saltcrypt, text)
-{	
-	var cryptkey = getcryptkey(sessioncrypt);
-
-	if(cryptkey === false)
-		return false;
-	
-	cryptkey = Sha256.hash(cryptkey + saltcrypt);
-
-	return htmlspecialchars(Aes.Ctr.decrypt(text, cryptkey, 256), ['ENT_NOQUOTES']);
+function decryptstring(keycrypt, saltcrypt, text)
+{		
+	return Aes.Ctr.decrypt(text, Sha256.hash(keycrypt + saltcrypt), 256);
 }
-
-function decryptarray(sessioncrypt, saltcrypt, decryptarrayindex, dbarray)
-{
-	// arrays and objects are passed by reference as default (used here)
-
-	var cryptkey = getcryptkey(sessioncrypt);
-
-	if(cryptkey === false)
-		return false;
-
-	cryptkey = Sha256.hash(cryptkey + saltcrypt);
-
-	for(var i = 0, len_i = dbarray.length; i < len_i; ++i)
-	{	
-		for(var j = 0, len_j = dbarray[i].length; j < len_j; ++j)
-		if(decryptarrayindex[j])
-			dbarray[i][j] = htmlspecialchars(Aes.Ctr.decrypt(dbarray[i][j], cryptkey, 256), ['ENT_NOQUOTES']);
-		else
-			dbarray[i][j] = dbarray[i][j];	
-	}
-
-	return true;
-}
-
-function randomString(stringlength) 
-{
-	var chars = "123456789ABCDEFGHIJKLMNPQRSTUVWXTZabcdefghiklmnpqrstuvwxyz";
-	var randomstring = '';
-	for (var i = 0; i < stringlength; i++) 
-	{
-		var rnum = Math.floor(Math.random() * chars.length);
-		randomstring += chars.substring(rnum,rnum+1);
-	}
-	return randomstring;
-}
-
-
-function base64_url_encode(input)
-{
-	return strtr(input, '+/=', '-_,');
-}
-
-function base64_url_decode(input)
-{
-    return strtr(input, '-_,', '+/=');
-}
-
-function findgroupnameinarray(dbgarray, gid)
-{
-	for (var i=0 ; i < dbgarray.length ; i++)
-	if(dbgarray[i].id == gid) 
-		return dbgarray[i].name;
-
-	return "";
-}
-
-function addgroupnameinarray(dbarray, dbgarray)
-{
-	for (var i=0 ; i < dbarray.length ; i++)
-		dbarray[i].gnam = findgroupnameinarray(dbgarray, dbarray[i].gid);
-}
-
-function fillgroupselect(sessioncrypt, saltcrypt, selelement, selectedid, addall, addundef) 
-{
-	var grpArr = getarray(sessioncrypt, saltcrypt, 'groups');
-	var currentindex = 0;
-	
-	selelement.length = 0; // remove all elements
-
-	if(addall)
-	{
-		var selected = -1 == selectedid ? true : false;
-		var op = new Option(addall, -1, selected, selected);
-                selelement.options[selelement.options.length] = op;
-		currentindex++;
-	}
-
-	if(addundef)
-	{
-		var selected = 0 == selectedid ? true : false;
-		var op = new Option(addundef, 0, selected, selected);
-                selelement.options[selelement.options.length] = op;
-		currentindex++;
-	}
-
-	grpArr.sort(sortgrouparray);
-
-	for (var i = 0, len_i = grpArr.length; i < len_i; ++i)
-	{
-		var selected = grpArr[i].id == selectedid ? true : false;
-                var op = new Option(grpArr[i].name, grpArr[i].id, selected, selected);
-                selelement.options[i + currentindex] = op;
-        }	
-}
-
-function sortgrouparray(a, b)
-{
-	//http://www.javascriptkit.com/javatutors/arraysort.shtml
-
-	var nameA, nameB;
-
-	if(a.name)	
-		nameA = a.name.toLowerCase();
-	else
-		nameA = "";
-
-	if(b.name)
-		nameB = b.name.toLowerCase();
-	else
-		nameB = "";	
-
-	if (nameA < nameB) //sort string ascending
-	  return -1
-	if (nameA > nameB)
-	  return 1
-	return 0 //default return value (no sorting)
-}
-
-function copytoclipboard(cliptext)
-{
-	try
-	{ 
-		if (window.clipboardData)
-		{
-			// the IE-manier
-			if(window.clipboardData.setData("Text", cliptext))
-				return 0;
-		}
-		else if(navigator.userAgent.indexOf("Opera") != -1) 
-		{
-			// No know working method (need to detect it as it try netscape security with exception and also fail in execCommand with exception)
-		}
-		else if (window.netscape && netscape.security)
-		{
-			try
-			{
-				netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-			}
-			catch(err)
-			{
-				//https://addons.mozilla.org/firefox/addon/852/	
-				//http://kb.mozillazine.org/Granting_JavaScript_access_to_the_clipboard
-				//https://developer.mozilla.org/en/Using_the_Clipboard
-
-				//jAlert("This browser have not enabled support for javascript copy operations.\n\nPlease see: http://kb.mozillazine.org/Granting_JavaScript_access_to_the_clipboard", "Password Crypt");
-		   		return 1;
-			}
-
-			var clip = Components.classes['@mozilla.org/widget/clipboard;1'].createInstance(Components.interfaces.nsIClipboard);
-
-			if(clip)
-			{
-				var trans = Components.classes['@mozilla.org/widget/transferable;1'].createInstance(Components.interfaces.nsITransferable);
-			
-				if(trans)
-				{
-					var str = new Object();
-					var len = new Object();
-					var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
-
-					if(str)
-					{
-						var clipid=Components.interfaces.nsIClipboard;
-		
-						if(clipid)
-						{					
-							str.data = cliptext;
-					
-							trans.addDataFlavor('text/unicode');					
-							trans.setTransferData("text/unicode", str, cliptext.length*2);		
-					
-							clip.setData(trans, null, clipid.kGlobalClipboard); // No return value
-							return 0;
-						}
-					}
-				}
-			}
-		}
-
-		//jAlert("This browser does not support any known javascript copy operations.", "Password Crypt");
-		return 2;
-	}
-	catch(err)
-	{
-		//jAlert('Javascript copy error: ' + err.description, "Password Crypt");
-		return 3;
-	}
-}
-
-/*
-function autologin(url, user, password, method) // Not used currently
-{
-
-// There may also be another way of doing it with special headers and Basic or Digest Access Authentication (MD5) 
-// Basic or Digest Access Authentication reply is 401
-// May not bee working across domains with the code below?
-// How do I set content (browser) - can I use an IFrame or open in a new window/tab?
-// Username and password can be set in the open command (Basic or Digest Access?) or directly in the headers with setRequestHeader and a base64 encoded string (Basic)
-// Easy to do from PHP but will reveal username and/or password for server ?????
-
-var http = new XMLHttpRequest();
-
-var url = "get_data.php";
-var params = "lorem=ipsum&name=binny";
-http.open("GET", url+"?"+params, true);
-http.onreadystatechange = function() {//Call a function when the state changes.
-	if(http.readyState == 4 && http.status == 200) {
-		alert(http.responseText);
-	}
-}
-http.send(null);
-
-or
-
-var url = "get_data.php";
-var params = "lorem=ipsum&name=binny";
-http.open("POST", url, true);
-
-//Send the proper header information along with the request
-http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-http.setRequestHeader("Content-length", params.length);
-http.setRequestHeader("Connection", "close");
-
-http.onreadystatechange = function() {//Call a function when the state changes.
-	if(http.readyState == 4 && http.status == 200) {
-		alert(http.responseText);
-	}
-}
-http.send(params);
-
-Can be used to set innerHtml = http.responseText
-
-Is it possible to set content of new window ??????
-
-
-
-	var murl = url;	
-	var pos = strrpos(url, "://");
-	if (pos > 0) 
-	{ 
-		if(password.length)
-			murl = substr_replace(url, user + ":" + password + "@", pos+3, 0);
-		else
-			murl = substr_replace(url, user + "@", pos+3, 0);
-	} 
-	return murl;     
-}
-*/
-
-
 

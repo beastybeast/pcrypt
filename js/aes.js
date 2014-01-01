@@ -334,7 +334,8 @@ Base64.encode = function(str, utf8encode) {  // http://tools.ietf.org/html/rfc46
   var o1, o2, o3, bits, h1, h2, h3, h4, e=[], pad = '', c, plain, coded;
   var b64 = Base64.code;
    
-  plain = utf8encode ? str.encodeUTF8() : str;
+  //plain = utf8encode ? str.encodeUTF8() : str;
+  plain = utf8encode ? Utf8.encode(str) : str; // Modified
   
   c = plain.length % 3;  // pad string to length of multiple of 3
   if (c > 0) { while (c++ < 3) { pad += '='; plain += '\0'; } }
@@ -377,8 +378,8 @@ Base64.decode = function(str, utf8decode) {
   var o1, o2, o3, h1, h2, h3, h4, bits, d=[], plain, coded;
   var b64 = Base64.code;
 
-  coded = utf8decode ? str.decodeUTF8() : str;
-  
+  //coded = utf8decode ? str.decodeUTF8() : str;
+  coded = utf8decode ? Utf8.decode(str) : str; // Modified
   
   for (var c=0; c<coded.length; c+=4) {  // unpack four hexets into three octets
     h1 = b64.indexOf(coded.charAt(c));
@@ -399,7 +400,8 @@ Base64.decode = function(str, utf8decode) {
   }
   plain = d.join('');  // join() is far faster than repeated string concatenation in IE
    
-  return utf8decode ? plain.decodeUTF8() : plain; 
+  //return utf8decode ? plain.decodeUTF8() : plain;
+  return utf8decode ? Utf8.decode(plain) : plain; // Modified
 }
 
 

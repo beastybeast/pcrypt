@@ -29,6 +29,11 @@ Compression of data with LZ77
 JSON strings used to store any data
 Work with most browsers
 
+DEPENDENCY
+Need the following other libraries: (adodb_lite and phpmailer) and run with PHP 
+5.3.3 and MySQL 4.1.20 (works fine with older versions). Linux is currently needed 
+for the random routine in PHP (easy to change)
+
 SECURITY
 Nobody knows for sure how secure this library is! If somebody finds a way to 
 break AES encryption or an implementation error is made - security may be 
